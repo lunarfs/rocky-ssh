@@ -1,57 +1,61 @@
-FROM centos:7.6.1810
-
+FROM --platform=linux/amd64 rockylinux:9.0
 ARG RELEASE_VERSION="2.6.1"
 
-# ------------------------------------------------------------------------------
-# - Import the RPM GPG keys for repositories
-# - Base install of required packages
-# - Install supervisord (used to run more than a single process)
-# - Install supervisor-stdout to allow output of services started by
-#  supervisord to be easily inspected with "docker logs".
-# ------------------------------------------------------------------------------
-RUN rpm --rebuilddb \
-	&& rpm --import \
-		http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-7 \
-	&& rpm --import \
-		https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 \
-	&& rpm --import \
-		https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY \
-	&& yum -y install \
-			--setopt=tsflags=nodocs \
-			--disableplugin=fastestmirror \
-		centos-release-scl \
-		centos-release-scl-rh \
-		epel-release \
-		https://centos7.iuscommunity.org/ius-release.rpm \
-	&& yum -y install \
-			--setopt=tsflags=nodocs \
-			--disableplugin=fastestmirror \
-		inotify-tools-3.14-8.el7 \
-		openssh-clients-7.4p1-21.el7 \
-		openssh-server-7.4p1-21.el7 \
-		openssl-1.0.2k-19.el7 \
-		python-setuptools-0.9.8-7.el7 \
-		sudo-1.8.23-4.el7 \
-		yum-plugin-versionlock-1.1.31-52.el7 \
-	&& yum versionlock add \
-		inotify-tools \
-		openssh \
-		openssh-server \
-		openssh-clients \
-		python-setuptools \
-		sudo \
-		yum-plugin-versionlock \
-	&& yum clean all \
-	&& easy_install \
-		'supervisor == 4.0.4' \
-		'supervisor-stdout == 0.1.1' \
-	&& mkdir -p \
-		/var/log/supervisor/ \
-	&& rm -rf /etc/ld.so.cache \
-	&& rm -rf /sbin/sln \
-	&& rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,cracklib,i18n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
-	&& rm -rf /{root,tmp,var/cache/{ldconfig,yum}}/* \
-	&& > /etc/sysconfig/i18n
+ARG OS_CODENAME="rocky"
+ARG __USER__="root"
+ARG __WORK_DIR__="/root"
+
+ENV \
+    LANG="C.UTF-8" \
+    LC_ALL="C.UTF-8"
+
+USER ${__USER__}
+
+
+RUN \
+    echo '--> upgrade' && \
+    dnf --assumeyes \
+        --setopt=tsflags=nodocs \
+        upgrade && \
+    echo '--> done upgrading' && \
+    dnf --assumeyes \
+        --setopt=tsflags=nodocs \
+        install \
+        dnf-utils && \
+    dnf --quiet makecache --refresh && \
+    echo '--> done upgrading'
+
+RUN	\
+    dnf --assumeyes \
+        --setopt=tsflags=nodocs \
+	    --disableplugin=fastestmirror \
+		install \
+        openssh-clients-8.7p1-10.el9_0.x86_64 \
+        openssh-server-8.7p1-10.el9_0.x86_64 \
+        openssl-3.0.1-43.el9_0.x86_64 \
+        wget \
+        findutils \
+ 		epel-release \
+        sudo && \
+    dnf --quiet makecache --refresh && \
+    dnf --assumeyes \
+        --setopt=tsflags=nodocs \
+        --disableplugin=fastestmirror \
+        install \
+        python3-pip && \
+    mkdir -p /var/log/supervisor/ && \
+    dnf --assumeyes \
+        --setopt=tsflags=nodocs \
+        --disableplugin=fastestmirror \
+        install \
+        git \
+        util-linux-user && \
+        pip3 install supervisor && \
+        pip3 install git+https://github.com/coderanger/supervisor-stdout && \
+        dnf --assumeyes \
+            erase \
+            git
+
 
 # ------------------------------------------------------------------------------
 # Copy files into place
@@ -107,7 +111,7 @@ ENV \
 	SSH_USER="app-admin" \
 	SSH_USER_FORCE_SFTP="false" \
 	SSH_USER_HOME="/home/%u" \
-	SSH_USER_ID="500:500" \
+	SSH_USER_ID="1000:1000" \
 	SSH_USER_PASSWORD="" \
 	SSH_USER_PASSWORD_HASHED="false" \
 	SSH_USER_PRIVATE_KEY="" \
@@ -152,5 +156,4 @@ HEALTHCHECK \
 	--timeout=1s \
 	--retries=5 \
 	CMD ["/usr/bin/healthcheck"]
-
-CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]
+CMD ["/usr/local/bin/supervisord", "--configuration=/etc/supervisord.conf"]

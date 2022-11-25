@@ -162,7 +162,7 @@ SSH Details
 --------------------------------------------------------------------------------
 chroot path : N/A
 home : /home/app-admin
-id : 500:500
+id : 1000:1000
 key fingerprints :
 dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6 (insecure key)
 password : uIEqLkiacCvxaN45
@@ -379,7 +379,7 @@ On first run the SSH user is created with a default shell of "/bin/bash". If you
 
 ##### SSH_USER_ID
 
-Use `SSH_USER_ID` to set a specific UID:GID for the `SSH_USER`. The values should be 500 or more for non system users - the default being 500:500. Using values in the range 2-499 is possible but should be used with caution as these values may conflict with existing system accounts.
+Use `SSH_USER_ID` to set a specific UID:GID for the `SSH_USER`. The values should be 1000 or more for non system users - the default being 1000:1000. Using values in the range 2-999 is possible but should be used with caution as these values may conflict with existing system accounts.
 
 This may be useful when running an SFTP container and mounting data volumes from an existing container.
 

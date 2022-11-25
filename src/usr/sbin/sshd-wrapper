@@ -45,8 +45,9 @@ function main ()
 {
 	local -r bin="/usr/sbin/sshd"
 	local -r bootstrap_state_file="/var/lib/misc/sshd-bootstrap"
-	local -r bootstrap_timeout="4"
+	local -r bootstrap_timeout="5"
 	local -r lock_file="/var/lock/subsys/sshd-wrapper"
+	local -r nologin="/run/nologin"
 	local -r nice="/bin/nice"
 	local -r niceness="10"
 
@@ -93,16 +94,9 @@ function main ()
 	fi
 
 	set +e
-	until [[ -f ${bootstrap_state_file} ]]
-	do
-		if ! inotifywait -qq \
-			-e "create" \
-			-t "${bootstrap_timeout}" \
-			"${bootstrap_state_file%/*}"
-		then
-			break
-		fi
-	done
+	timeout --signal=9 ${bootstrap_timeout} bash -c "until find ${bootstrap_state_file} 2> /dev/null;do
+        sleep 1;
+    done"
 	set -e
 
 	if [[ ! -f ${bootstrap_state_file} ]]
@@ -120,6 +114,10 @@ function main ()
 			'INFO: %s starting %s\n' \
 			"${0##*/}" \
 			"${bin##*/}"
+	fi
+	if [[ -f ${nologin} ]]
+	then
+		rm -f "${nologin}"
 	fi
 
 	__cleanup

@@ -116,7 +116,7 @@ function __generate_ssh_host_keys ()
 			__generate_ssh_host_key "${replace}" rsa
 			__generate_ssh_host_key "${replace}" dsa
 			;;
-		7)
+		7 | 9.0)
 			__generate_ssh_host_key "${replace}" rsa1
 			__generate_ssh_host_key "${replace}" rsa
 			__generate_ssh_host_key "${replace}" dsa
@@ -470,7 +470,7 @@ function __get_ssh_user_force_sftp ()
 
 function __get_ssh_user_gid ()
 {
-	local -r default_value="${1:-500}"
+	local -r default_value="${1:-1000}"
 	local -r id="$(
 		__get_ssh_user_id
 	)"
@@ -514,7 +514,7 @@ function __get_ssh_user_home ()
 
 function __get_ssh_user_id ()
 {
-	local -r default_value="${1:-500:500}"
+	local -r default_value="${1:-1000:1000}"
 	local -r root_value="0:0"
 	local -r user="${2:-"$(
 		__get_ssh_user
@@ -560,7 +560,7 @@ function __get_ssh_user_shell ()
 
 function __get_ssh_user_uid ()
 {
-	local -r default_value="${1:-500}"
+	local -r default_value="${1:-1000}"
 	local -r id="$(
 		__get_ssh_user_id
 	)"
